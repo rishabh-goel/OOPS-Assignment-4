@@ -31,8 +31,10 @@ Operations included:
 | `AbstractClassDef("AbstractClass1", Private(Field("f1")), Public(CreateMethod("m1", Params("a", "b"))), Public(CreateMethod("m2", Params("a", "b"), Assign("c", Union(Variable("a"), Variable("b"))), Variable("c")))).eval()` | Creates an abstract class with concrete method and abstract method | Assignment 3 |
 | `Interface("MyInterface", Public(CreateMethod("m4", Params("a", "b")))).eval()` | Creates an interface with just method definition | Assignment 3 |
 | `ClassDef("TestClass2") Implements Interface("MyInterface")` | Concrete class implements methods of an interface | Assignment 3 |
-| `abc` | If Condition | Assignment 4 |
-| `abc` | Exception | Assignment 4 |
+| `If(Check(Variable("E"), Value(10)), Then(Assign("E", Value(Set(1)))), Else(Assign("E", Value(Set(1,5,6,10))))).eval()` | If-Then-Else Condition | Assignment 4 |
+| `ExceptionClassDef("ExceptionClass", Field("Reason")).eval()` | Exception Class | Assignment 4 |
+| `ThrowException(ExceptionClassDef("AnotherExceptionClass"), "Check Failed").eval()` | Throw Exception | Assignment 4 |
+| `CatchException(ExceptionClassDef("AnotherExceptionClass").eval()` | Catch Exception | Assignment 4 |
 
 
 ## <u>Instructions to Execute</u>
@@ -146,6 +148,38 @@ Import the following dependencies into your code:
 
 ---
 
+![](project/code_structure_img9.png)
+
+1. Check the condition inside the If statement
+2. Evaluate Then code block if the check condition is true
+3. Evaluate Else code block if the check condition is false
+4. Evaluate the If-Then-Else statement
+
+---
+
+![](project/code_structure_img10.png)
+
+1. Name of the Exception class
+2. A field to hold the Exception message
+3. Create an Exception class
+
+---
+
+![](project/code_structure_img11.png)
+
+1. Fetch the field created inside the Exception class to hold the exception message
+2. Exception message to be assigned
+3. Evaluate the Throw Exception statement
+
+---
+
+![](project/code_structure_img12.png)
+
+1. Fetches the exception message and returns the output
+2. Evaluate the Catch Exception statement
+
+---
+
 ## <u>Points to remember</u>
 
 1. Inner class object cannot access Outer class object
@@ -167,3 +201,6 @@ Import the following dependencies into your code:
 17. An abstract class can inherit from another abstract class and implement interfaces where all interfaces and the abstract class have methods with the same signatures
 18. An abstract class can implement interfaces
 19. An abstract class can inherit from a concrete class
+20. An exception is caught only if that exception has been thrown
+21. Exception Class needs to be created first before throwing or catching an exception
+22. Always create 1 field inside the Exception class definition to hold the exception message
