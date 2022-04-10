@@ -1,6 +1,6 @@
 package com.rishabh.hw4
 
-import com.rishabh.hw4.Computation.SetExp.{AbstractClassDef, Assign, ClassDef, Constructor, CreateMethod, Cross, Field, Interface, InvokeObject, NewObject, Params, Private, Public, Union, Value, Variable}
+import com.rishabh.hw4.Computation.SetExp.{AbstractClassDef, Assign, ClassDef, Constructor, CreateMethod, Cross, ExceptionClassDef, Field, Interface, InvokeObject, NewObject, Params, Private, Public, Union, Value, Variable}
 
 import java.lang
 import scala.collection.{immutable, mutable}
@@ -15,6 +15,7 @@ object Computation:
 
   // Creating an instance of Computation class to access its field
   val instance = new Computation()
+  private var output: BasicType = null
 
   import SetExp.*
 
@@ -123,11 +124,21 @@ object Computation:
           m.asInstanceOf[String] match {
             case "class" => "class"
             case "abstract_class" => "abstract_class"
-            case "interface" => throw new Error("Only a class/abstract_class can implement an interface")
+            case "interface" => {
+//              throw new Error("Only a class/abstract_class can implement an interface")
+              ExceptionClassDef("InterfaceInvalidTypeExceptionClass", Field("InterfaceTypeReason")).eval()
+              ThrowException(ExceptionClassDef("InterfaceInvalidTypeExceptionClass"), "Only a class/abstract_class can implement an interface").eval()
+              CatchException(ExceptionClassDef("InterfaceInvalidTypeExceptionClass")).eval()
+            }
           }
 
 
-        case None => throw new Error("Invalid type")
+        case None => {
+//          throw new Error("Invalid type")
+          ExceptionClassDef("InvalidTypeExceptionClass", Field("InvalidTypeReason")).eval()
+          ThrowException(ExceptionClassDef("InvalidTypeExceptionClass"), "Invalid type").eval()
+          CatchException(ExceptionClassDef("InvalidTypeExceptionClass")).eval()
+        }
       }
 
       // Identify the type of parent reference being used
@@ -135,10 +146,20 @@ object Computation:
         case Some(m) =>
           m.asInstanceOf[String] match {
             case "interface" => "interface"
-            case _ => throw new Error("A class can't be implemented. It can only be extended")
+            case _ => {
+//              throw new Error("A class can't be implemented. It can only be extended")
+              ExceptionClassDef("ClassInvalidTypeExceptionClass", Field("ClassTypeReason")).eval()
+              ThrowException(ExceptionClassDef("ClassInvalidTypeExceptionClass"), "A class can't be implemented. It can only be extended").eval()
+              CatchException(ExceptionClassDef("ClassInvalidTypeExceptionClass")).eval()
+            }
           }
 
-        case None => throw new Error("Invalid type")
+        case None => {
+//          throw new Error("Invalid type")
+          ExceptionClassDef("InvalidTypeExceptionClass", Field("InvalidTypeReason")).eval()
+          ThrowException(ExceptionClassDef("InvalidTypeExceptionClass"), "Invalid type").eval()
+          CatchException(ExceptionClassDef("InvalidTypeExceptionClass")).eval()
+        }
       }
 
       // Identify the methods present in both parent and child
@@ -148,7 +169,10 @@ object Computation:
 
       // If interface has more methods than class, then it should result in error as class has to implement all interface methods
       if(childType.equals("class") && parentType.equals("interface") && parentKeys.size > childKeys.size) {
-        throw new Error("Class has to implement interface methods")
+//        throw new Error("Class has to implement interface methods")
+        ExceptionClassDef("ClassImplementExceptionClass", Field("ClassImplementReason")).eval()
+        ThrowException(ExceptionClassDef("ClassImplementExceptionClass"), "Class has to implement interface methods").eval()
+        CatchException(ExceptionClassDef("ClassImplementExceptionClass")).eval()
       }
 
       // Check if the parameter list for each method is same. If not, then throw an error
@@ -157,23 +181,62 @@ object Computation:
         val childMethod = child("method").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]](key).asInstanceOf[scala.collection.mutable.ListBuffer[SetExp]]
 
         if(parentMethod.head != childMethod.head) {
-          throw new Error("Cannot implement method from interface as method parameters don't match")
+//          throw new Error("Cannot implement method from interface as method parameters don't match")
+          ExceptionClassDef("ParameterExceptionClass", Field("ParameterMismatchReason")).eval()
+          ThrowException(ExceptionClassDef("ParameterExceptionClass"), "Cannot implement method from interface as method parameters don't match").eval()
+          CatchException(ExceptionClassDef("ParameterExceptionClass")).eval()
         }
       })
 
-      val methodMap = parent("method").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]].clone().++(child("method").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]]).clone()
+      if(Variable("msgInterfaceInvalidTypeExceptionClass").eval() == "msgInterfaceInvalidTypeExceptionClass" &&
+        Variable("msgInvalidTypeExceptionClass").eval() == "msgInvalidTypeExceptionClass" &&
+        Variable("msgClassInvalidTypeExceptionClass").eval() == "msgClassInvalidTypeExceptionClass" &&
+        Variable("msgClassImplementExceptionClass").eval() == "msgClassImplementExceptionClass" &&
+        Variable("msgParameterExceptionClass").eval() == "msgParameterExceptionClass")
+      {
+        val methodMap = parent("method").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]].clone().++(child("method").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]]).clone()
 
-      val newpublicChildMap = getNewModifiers("public", parentName, childName)
+        val newpublicChildMap = getNewModifiers("public", parentName, childName)
 
-      // Update the access modifiers for child class after inheriting from the parent class
-      accessMap.update("public", accessMap("public").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newpublicChildMap))
+        // Update the access modifiers for child class after inheriting from the parent class
+        accessMap.update("public", accessMap("public").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newpublicChildMap))
 
-      // keep track of which class inherits which class to avoid multiple inheritance
-      interfaceMap += (childName -> parentName)
+        // keep track of which class inherits which class to avoid multiple inheritance
+        interfaceMap += (childName -> parentName)
 
-      // Map with updated values to be put again to the scopeMap
-      val map: scala.collection.mutable.Map[BasicType, BasicType] = scala.collection.mutable.Map("field"-> child("field").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]], "method" -> methodMap, "constructor" -> child("constructor").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]])
-      scopeMap += (childName -> map)
+        // Map with updated values to be put again to the scopeMap
+        val map: scala.collection.mutable.Map[BasicType, BasicType] = scala.collection.mutable.Map("field"-> child("field").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]], "method" -> methodMap, "constructor" -> child("constructor").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]])
+        scopeMap += (childName -> map)
+      }
+      else {
+        if(Variable("msgInterfaceInvalidTypeExceptionClass").eval() != "msgInterfaceInvalidTypeExceptionClass")
+        {
+          output = Variable("msgInterfaceInvalidTypeExceptionClass").eval()
+          scopeMap.remove("msgInterfaceInvalidTypeExceptionClass")
+        }
+        else if(Variable("msgInvalidTypeExceptionClass").eval() != "msgInvalidTypeExceptionClass")
+        {
+          output = Variable("msgInvalidTypeExceptionClass").eval()
+          scopeMap.remove("msgInvalidTypeExceptionClass")
+        }
+        else if(Variable("msgClassInvalidTypeExceptionClass").eval() != "msgClassInvalidTypeExceptionClass")
+        {
+          output = Variable("msgClassInvalidTypeExceptionClass").eval()
+          scopeMap.remove("msgClassInvalidTypeExceptionClass")
+        }
+        else if(Variable("msgClassImplementExceptionClass").eval() != "msgClassImplementExceptionClass")
+        {
+          output = Variable("msgClassImplementExceptionClass").eval()
+          scopeMap.remove("msgClassImplementExceptionClass")
+        }
+        else if(Variable("msgParameterExceptionClass").eval() != "msgParameterExceptionClass")
+        {
+          output = Variable("msgParameterExceptionClass").eval()
+          scopeMap.remove("msgParameterExceptionClass")
+        }
+
+        output
+      }
     }
 
 
@@ -190,14 +253,33 @@ object Computation:
       val parentName = findName(parent)
 
       // Check if child and parent class are same
-      if(parentName == childName)
-        throw new Error("A class/interface cannot inherit itself")
+      if(parentName == childName) {
+//        throw new Error("A class/interface cannot inherit itself")
+        ExceptionClassDef("SameInheritanceExceptionClass", Field("SameInheritanceReason")).eval()
+        ThrowException(ExceptionClassDef("SameInheritanceExceptionClass"), "A class/interface cannot inherit itself").eval()
+        CatchException(ExceptionClassDef("SameInheritanceExceptionClass")).eval()
+      }
 
       // Check if child class already inherits from some parent class
-      if(inheritanceMap.contains(childName))
-        throw new Error("Cannot support multiple inheritance")
-      else {
+      if(inheritanceMap.contains(childName)) {
+//        throw new Error("Cannot support multiple inheritance")
+        ExceptionClassDef("MultipleInheritanceExceptionClass", Field("MultipleInheritanceReason")).eval()
+        ThrowException(ExceptionClassDef("MultipleInheritanceExceptionClass"), "Cannot support multiple inheritance").eval()
+        CatchException(ExceptionClassDef("MultipleInheritanceExceptionClass")).eval()
 
+        if(Variable("msgSameInheritanceExceptionClass").eval() != "msgSameInheritanceExceptionClass")
+        {
+          val output = Variable("msgSameInheritanceExceptionClass").eval()
+          scopeMap.remove("msgSameInheritanceExceptionClass")
+          output
+        }
+        else
+        {
+          val output = Variable("msgMultipleInheritanceExceptionClass").eval()
+          scopeMap.remove("msgMultipleInheritanceExceptionClass")
+          output
+        }
+      } else {
         // Get private access members of parent class
         val privateMembers = accessMap("private").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]](parentName)
 
@@ -210,7 +292,12 @@ object Computation:
               case "interface" => "interface"
             }
 
-          case None => throw new Error("Invalid type")
+          case None => {
+//            throw new Error("Invalid type")
+            ExceptionClassDef("InvalidTypeExceptionClass", Field("InvalidTypeReason")).eval()
+            ThrowException(ExceptionClassDef("InvalidTypeExceptionClass"), "Invalid type").eval()
+            CatchException(ExceptionClassDef("InvalidTypeExceptionClass")).eval()
+          }
         }
 
         // Identify the type of parent reference that will be extended
@@ -222,7 +309,12 @@ object Computation:
               case "interface" => "interface"
             }
 
-          case None => throw new Error("Invalid type")
+          case None => {
+//            throw new Error("Invalid type")
+            ExceptionClassDef("InvalidTypeExceptionClass", Field("InvalidTypeReason")).eval()
+            ThrowException(ExceptionClassDef("InvalidTypeExceptionClass"), "Invalid type").eval()
+            CatchException(ExceptionClassDef("InvalidTypeExceptionClass")).eval()
+          }
         }
 
 
@@ -257,7 +349,10 @@ object Computation:
 
           // Concrete class need to implement abstract method of abstract class
           if(commonKeys.isEmpty && childType.equals("class") && parentType.equals("abstract_class")) {
-            throw new Error("Abstract class method not implemented")
+//            throw new Error("Abstract class method not implemented")
+            ExceptionClassDef("IncompleteImplementationExceptionClass", Field("IncompleteImplementationReason")).eval()
+            ThrowException(ExceptionClassDef("IncompleteImplementationExceptionClass"), "Abstract class method not implemented").eval()
+            CatchException(ExceptionClassDef("IncompleteImplementationExceptionClass")).eval()
           }
 
           // Check if the parameter list for each method is same. If not, then throw an error
@@ -266,25 +361,49 @@ object Computation:
             val childMethod = child("method").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]](key).asInstanceOf[scala.collection.mutable.ListBuffer[SetExp]]
 
             if(parentMethod.head != childMethod.head) {
-              throw new Error("Cannot override method as paramter list doesn't match")
+//              throw new Error("Cannot override method as paramter list doesn't match")
+              ExceptionClassDef("ParameterExceptionClass", Field("ParameterMismatchReason")).eval()
+              ThrowException(ExceptionClassDef("ParameterExceptionClass"), "Cannot override method as paramter list doesn't match").eval()
+              CatchException(ExceptionClassDef("ParameterExceptionClass")).eval()
             }
           })
 
-          // Get updated maps for the child
-          val newpublicChildMap = getNewModifiers("public", parentName, childName)
-          val newprotectedChildMap = getNewModifiers("protected", parentName, childName)
+          if(Variable("msgInvalidTypeExceptionClass").eval() == "msgInvalidTypeExceptionClass" &&
+            Variable("msgIncompleteImplementationExceptionClass").eval() == "msgIncompleteImplementationExceptionClass" &&
+            Variable("msgParameterExceptionClass").eval() == "msgParameterExceptionClass")
+          {
+            // Get updated maps for the child
+            val newpublicChildMap = getNewModifiers("public", parentName, childName)
+            val newprotectedChildMap = getNewModifiers("protected", parentName, childName)
 
 
-          // Update the access modifiers for child class after inheriting from the parent class
-          accessMap.update("public", accessMap("public").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newpublicChildMap))
-          accessMap.update("protected", accessMap("protected").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newprotectedChildMap))
+            // Update the access modifiers for child class after inheriting from the parent class
+            accessMap.update("public", accessMap("public").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newpublicChildMap))
+            accessMap.update("protected", accessMap("protected").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newprotectedChildMap))
 
-          // keep track of which class inherits which class to avoid multiple inheritance
-          inheritanceMap += (childName -> parentName)
+            // keep track of which class inherits which class to avoid multiple inheritance
+            inheritanceMap += (childName -> parentName)
 
-          // Map with updated values to be put again to the scopeMap
-          val map: scala.collection.mutable.Map[BasicType, BasicType] = scala.collection.mutable.Map("field" -> fieldMap, "constructor" -> constructorMap, "method" -> methodMap)
-          scopeMap += (childName -> map)
+            // Map with updated values to be put again to the scopeMap
+            val map: scala.collection.mutable.Map[BasicType, BasicType] = scala.collection.mutable.Map("field" -> fieldMap, "constructor" -> constructorMap, "method" -> methodMap)
+            scopeMap += (childName -> map)
+          }
+          else if(Variable("msgInvalidTypeExceptionClass").eval() != "msgInvalidTypeExceptionClass")
+          {
+            output = Variable("msgInvalidTypeExceptionClass").eval()
+            scopeMap.remove("msgInvalidTypeExceptionClass")
+          }
+          else if(Variable("msgIncompleteImplementationExceptionClass").eval() != "msgIncompleteImplementationExceptionClass")
+          {
+            output = Variable("msgIncompleteImplementationExceptionClass").eval()
+            scopeMap.remove("msgIncompleteImplementationExceptionClass")
+          }
+          else if(Variable("msgParameterExceptionClass").eval() != "msgParameterExceptionClass")
+          {
+            output = Variable("msgParameterExceptionClass").eval()
+            scopeMap.remove("msgParameterExceptionClass")
+          }
+          output
         }
         else {
 
@@ -302,7 +421,10 @@ object Computation:
           val commonKeys = parentKeys.intersect(childKeys)
 
           if(commonKeys.isEmpty && childType.equals("class")) {
-            throw new Error("Abstract class method not implemented")
+//            throw new Error("Abstract class method not implemented")
+            ExceptionClassDef("IncompleteImplementationExceptionClass", Field("IncompleteImplementationReason")).eval()
+            ThrowException(ExceptionClassDef("IncompleteImplementationExceptionClass"), "Abstract class method not implemented").eval()
+            CatchException(ExceptionClassDef("IncompleteImplementationExceptionClass")).eval()
           }
 
           // Check if the parameter list for each method is same. If not, then throw an error
@@ -311,24 +433,47 @@ object Computation:
             val childMethod = child("method").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]](key).asInstanceOf[scala.collection.mutable.ListBuffer[SetExp]]
 
             if(parentMethod.head != childMethod.head) {
-              throw new Error("Cannot override method as paramter list doesn't match")
+              ExceptionClassDef("ParameterExceptionClass", Field("ParameterMismatchReason")).eval()
+              ThrowException(ExceptionClassDef("ParameterExceptionClass"), "Cannot override method as paramter list doesn't match").eval()
+              CatchException(ExceptionClassDef("ParameterExceptionClass")).eval()
             }
           })
 
-          // Get updated maps for the child
-          val newpublicChildMap = getNewModifiers("public", parentName, childName)
-          val newprotectedChildMap = getNewModifiers("protected", parentName, childName)
+          if(Variable("msgInvalidTypeExceptionClass").eval() == "msgInvalidTypeExceptionClass" &&
+            Variable("msgIncompleteImplementationExceptionClass").eval() == "msgIncompleteImplementationExceptionClass" &&
+            Variable("msgParameterExceptionClass").eval() == "msgParameterExceptionClass")
+          {
+            // Get updated maps for the child
+            val newpublicChildMap = getNewModifiers("public", parentName, childName)
+            val newprotectedChildMap = getNewModifiers("protected", parentName, childName)
 
-          // Update the access modifiers for child interface after inheriting from the parent interface
-          accessMap.update("public", accessMap("public").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newpublicChildMap))
-          accessMap.update("protected", accessMap("protected").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newprotectedChildMap))
+            // Update the access modifiers for child interface after inheriting from the parent interface
+            accessMap.update("public", accessMap("public").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newpublicChildMap))
+            accessMap.update("protected", accessMap("protected").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newprotectedChildMap))
 
-          // keep track of which interface inherits which interface to avoid multiple inheritance
-          inheritanceMap += (childName -> parentName)
+            // keep track of which interface inherits which interface to avoid multiple inheritance
+            inheritanceMap += (childName -> parentName)
 
-          // Map with updated values to be put again to the scopeMap
-          val map: scala.collection.mutable.Map[BasicType, BasicType] = scala.collection.mutable.Map("method" -> methodMap)
-          scopeMap += (childName -> map)
+            // Map with updated values to be put again to the scopeMap
+            val map: scala.collection.mutable.Map[BasicType, BasicType] = scala.collection.mutable.Map("method" -> methodMap)
+            scopeMap += (childName -> map)
+          }
+          else if(Variable("msgInvalidTypeExceptionClass").eval() != "msgInvalidTypeExceptionClass")
+          {
+            output = Variable("msgInvalidTypeExceptionClass").eval()
+            scopeMap.remove("msgInvalidTypeExceptionClass")
+          }
+          else if(Variable("msgIncompleteImplementationExceptionClass").eval() != "msgIncompleteImplementationExceptionClass")
+          {
+            output = Variable("msgIncompleteImplementationExceptionClass").eval()
+            scopeMap.remove("msgIncompleteImplementationExceptionClass")
+          }
+          else if(Variable("msgParameterExceptionClass").eval() != "msgParameterExceptionClass")
+          {
+            output = Variable("msgParameterExceptionClass").eval()
+            scopeMap.remove("msgParameterExceptionClass")
+          }
+          output
         }
       }
     }
@@ -344,16 +489,24 @@ object Computation:
         val outer = currentScope(outerRefName).asInstanceOf[scala.collection.mutable.Map[String, Any]]
 
         // Allow only 1 nested item to get created
-        if(nestedClassMap.contains(outer))
-          throw new Error("Cannot create multiple nested items")
+        if(nestedClassMap.contains(outer)) {
+//          throw new Error("Cannot create multiple nested items")
+          ExceptionClassDef("NestedExceptionClass", Field("NestedClassReason")).eval(scope)
+          ThrowException(ExceptionClassDef("NestedExceptionClass"), "Cannot create multiple nested items").eval(scope)
+          val output = CatchException(ExceptionClassDef("NestedExceptionClass")).eval(scope)
+          scope.remove("msgNestedExceptionClass")
+          output
+        }
+        else{
+          // Update the map of outer item to include details of inner item
+          outer += (innerRefType -> scala.collection.mutable.Map(innerRefName -> inner))
+          nestedClassMap += (outerRefName -> innerRefName)
 
-        // Update the map of outer item to include details of inner item
-        outer += (innerRefType -> scala.collection.mutable.Map(innerRefName -> inner))
-        nestedClassMap += (outerRefName -> innerRefName)
-
-        // Remove the inner item from current scope as it has been moved to inside outer item
-        currentScope.remove(innerRefName)
+          // Remove the inner item from current scope as it has been moved to inside outer item
+          currentScope.remove(innerRefName)
+        }
       }
+
 
       // Helper method to create  Class/Abstract Class/Inner Interface
       def createRefHelper(itemName: String, itemType: String, currentScope: mutable.Map[BasicType, BasicType], expr: SetExp*) = {
@@ -391,18 +544,31 @@ object Computation:
             val interfaceMethods: scala.collection.mutable.Map[BasicType, BasicType] = map("method").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]]
             interfaceMethods.foreach(method => {
               val methodBody = method._2.asInstanceOf[scala.collection.mutable.ListBuffer[SetExp]]
-              if (methodBody.size > 1)
-                throw new Error("Interface methods can't have body")
+              if (methodBody.size > 1) {
+//                throw new Error("Interface methods can't have body")
+                ExceptionClassDef("InterfaceExceptionClass", Field("Reason")).eval(scope)
+                ThrowException(ExceptionClassDef("InterfaceExceptionClass"), "Interface methods can't have body").eval(scope)
+                CatchException(ExceptionClassDef("InterfaceExceptionClass")).eval(scope)
+              }
             })
           }
 
-          // Update the maps with access modifiers and class definition
-          currentScope += (itemName -> map)
-          dataStructureList.update(itemType, dataStructureList(itemType).asInstanceOf[scala.collection.mutable.ListBuffer[BasicType]] += itemName)
-          accessMap.update("public", accessMap("public").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (publicClassMap.head._1 -> publicClassMap.head._2))
-          accessMap.update("private", accessMap("private").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (privateClassMap.head._1 -> privateClassMap.head._2))
-          accessMap.update("protected", accessMap("protected").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (protectedClassMap.head._1 -> protectedClassMap.head._2))
-          currentScope(itemName)
+
+          if(Variable("msgInterfaceExceptionClass").eval(scope) == "msgInterfaceExceptionClass"){
+            // Update the maps with access modifiers and class definition
+            currentScope += (itemName -> map)
+            dataStructureList.update(itemType, dataStructureList(itemType).asInstanceOf[scala.collection.mutable.ListBuffer[BasicType]] += itemName)
+            accessMap.update("public", accessMap("public").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (publicClassMap.head._1 -> publicClassMap.head._2))
+            accessMap.update("private", accessMap("private").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (privateClassMap.head._1 -> privateClassMap.head._2))
+            accessMap.update("protected", accessMap("protected").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (protectedClassMap.head._1 -> protectedClassMap.head._2))
+            currentScope(itemName)
+          }
+          else
+          {
+            val output = Variable("msgInterfaceExceptionClass").eval(scope)
+            scope.remove("msgInterfaceExceptionClass")
+            output
+          }
         }
       }
 
@@ -442,16 +608,56 @@ object Computation:
           if(instance.isExceptionThrown)
             return
 
-          scope.update(set.eval(scope), set.eval(scope).asInstanceOf[scala.collection.mutable.Set[BasicType]] += item.eval(scope))
-          scope(set.eval(scope))
+          val key = set.eval(scope)
+
+          val keyName = scope.find(_._2 == key).map(_._1) match {
+            case Some(m) => m.asInstanceOf[String]
+            case None => {
+//              throw new Error("Invalid type")
+              ExceptionClassDef("InvalidTypeExceptionClass", Field("InvalidTypeReason")).eval(scope)
+              ThrowException(ExceptionClassDef("InvalidTypeExceptionClass"), "Invalid type").eval(scope)
+              CatchException(ExceptionClassDef("InvalidTypeExceptionClass")).eval(scope)
+            }
+          }
+
+          if(Variable("msgInvalidTypeExceptionClass").eval(scope) != "msgInvalidTypeExceptionClass")
+          {
+            val output = Variable("msgInvalidTypeExceptionClass").eval(scope)
+            scope.remove("msgInvalidTypeExceptionClass")
+            output
+          }
+          else{
+            scope.update(keyName, set.eval(scope).asInstanceOf[scala.collection.mutable.Set[BasicType]] += item.eval(scope))
+            scope(keyName)
+          }
 
 
         case Delete(set, item) =>
           if(instance.isExceptionThrown)
             return
 
-          scope.update(set.eval(scope), set.eval(scope).asInstanceOf[scala.collection.mutable.Set[BasicType]] -= item.eval(scope))
-          scope(set.eval(scope))
+          val key = set.eval(scope)
+
+          val keyName = scope.find(_._2 == key).map(_._1) match {
+            case Some(m) => m.asInstanceOf[String]
+            case None => {
+//              throw new Error("Invalid type")
+              ExceptionClassDef("InvalidTypeExceptionClass", Field("InvalidTypeReason")).eval(scope)
+              ThrowException(ExceptionClassDef("InvalidTypeExceptionClass"), "Invalid type").eval(scope)
+              CatchException(ExceptionClassDef("InvalidTypeExceptionClass")).eval(scope)
+            }
+          }
+
+          if(Variable("msgInvalidTypeExceptionClass").eval(scope) == "msgInvalidTypeExceptionClass")
+          {
+            val output = Variable("msgInvalidTypeExceptionClass").eval(scope)
+            scope.remove("msgInvalidTypeExceptionClass")
+            output
+          }
+          else{
+            scope.update(keyName, set.eval(scope).asInstanceOf[scala.collection.mutable.Set[BasicType]] += item.eval(scope))
+            scope(keyName)
+          }
 
 
         case Union(set1, set2) =>
@@ -566,6 +772,11 @@ object Computation:
           }
           else {
             throw new Error("Cannot create constructor of abstract class")
+            ExceptionClassDef("ConstructorExceptionClass", Field("ConstructorReason")).eval(scope)
+            ThrowException(ExceptionClassDef("ConstructorExceptionClass"), "Cannot create constructor of abstract class").eval(scope)
+            val output = CatchException(ExceptionClassDef("ConstructorExceptionClass")).eval(scope)
+            scope.remove("msgConstructorExceptionClass")
+            output
           }
 
 
@@ -606,7 +817,12 @@ object Computation:
             method.last.eval(scope)
           }
           else {
-            throw new Error("Insufficient parameters")
+//            throw new Error("Insufficient parameters")
+            ExceptionClassDef("InsufficientExceptionClass", Field("InsufficientParameterReason")).eval(scope)
+            ThrowException(ExceptionClassDef("InsufficientExceptionClass"), "Insufficient parameters").eval(scope)
+            val output = CatchException(ExceptionClassDef("InsufficientExceptionClass")).eval(scope)
+            scope.remove("msgInsufficientExceptionClass")
+            output
           }
 
 
@@ -615,10 +831,14 @@ object Computation:
 
           // Check if formal parameters and actual parameters for constructors are equal
           if(parameters.length != values.length) {
-            throw new Error("Parameter list doesn't have equal number of initializing values")
+//            throw new Error("Parameter list doesn't have equal number of initializing values")
+            ExceptionClassDef("ParameterExceptionClass", Field("InsufficientParameterReason")).eval(scope)
+            ThrowException(ExceptionClassDef("ParameterExceptionClass"), "Parameter list doesn't have equal number of initializing values").eval(scope)
+            val output = CatchException(ExceptionClassDef("ParameterExceptionClass")).eval(scope)
+            scope.remove("msgParameterExceptionClass")
+            output
           }
           else{
-
             // Create a list of values being passed to the constructor
             val valueList: ListBuffer[BasicType] = ListBuffer()
             values.foreach(i => {
@@ -665,26 +885,39 @@ object Computation:
                   // Get the name of the outer class
                   val outerClassName = nestedClassMap.find(_._2.asInstanceOf[String] == className).map(_._1) match {
                     case Some(m) => m
-                    case None => throw new Error("Outer class not found")
+                    case None => {
+//                      throw new Error("Outer class not found")
+                      ExceptionClassDef("InsufficientExceptionClass", Field("InsufficientParameterReason")).eval(scope)
+                      ThrowException(ExceptionClassDef("InsufficientExceptionClass"), "Insufficient parameters").eval(scope)
+                      CatchException(ExceptionClassDef("InsufficientExceptionClass")).eval(scope)
+                    }
                   }
 
-                  // Get the list of objects created for the outer class
-                  val outerClassObjects = objectMap(outerClassName).asInstanceOf[ListBuffer[Any]]
+                  if(Variable("msgInsufficientExceptionClass").eval(scope) == "msgInsufficientExceptionClass"){
+                    // Get the list of objects created for the outer class
+                    val outerClassObjects = objectMap(outerClassName).asInstanceOf[ListBuffer[Any]]
 
-                  // Check if the parent object exists or not
-                  if(outerClassObjects.contains(parentObj.head)) {
-                    val outerClassAttr = scope(outerClassName).asInstanceOf[scala.collection.mutable.Map[String, Any]]
-                    // Associate the members of the inner class with the current object
-                    attrMap += (expr.eval(scope) -> outerClassAttr("innerClass").asInstanceOf[mutable.Map[String, Any]](className))
-                  }
-                  else {
-                    // Throw an exception because outer class object doesn't exist
-                    throw new Error("Outer class object doesn't exist")
+                    // Check if the parent object exists or not
+                    if(outerClassObjects.contains(parentObj.head)) {
+                      val outerClassAttr = scope(outerClassName).asInstanceOf[scala.collection.mutable.Map[String, Any]]
+                      // Associate the members of the inner class with the current object
+                      attrMap += (expr.eval(scope) -> outerClassAttr("innerClass").asInstanceOf[mutable.Map[String, Any]](className))
+                    }
+                    else {
+                      // Throw an exception because outer class object doesn't exist
+//                      throw new Error("Outer class object doesn't exist")
+                      ExceptionClassDef("NoOuterObjectExceptionClass", Field("NoOuterObjectReason")).eval(scope)
+                      ThrowException(ExceptionClassDef("NoOuterObjectExceptionClass"), "Outer class object doesn't exist").eval(scope)
+                      CatchException(ExceptionClassDef("NoOuterObjectExceptionClass")).eval(scope)
+                    }
                   }
                 }
                 else {
                   // Throw an exception because the current object's class is not an inner class
-                  throw new Error(className + " is not an inner class. Outer class object not needed")
+//                  throw new Error(className + " is not an inner class. Outer class object not needed")
+                  ExceptionClassDef("NoObjectNeededExceptionClass", Field("NoObjectNeededReason")).eval(scope)
+                  ThrowException(ExceptionClassDef("NoObjectNeededExceptionClass"), "Outer class object not needed").eval(scope)
+                  CatchException(ExceptionClassDef("NoObjectNeededExceptionClass")).eval(scope)
                 }
               }
 
@@ -697,13 +930,38 @@ object Computation:
 
               initializationMap.foreach(i => {
                 if(!result.contains(i._1))
-                  throw new Error("Class doesn't have field " + i._1)
+//                  throw new Error("Class doesn't have field " + i._1)
+                  ExceptionClassDef("NoFieldExceptionClass", Field("NoFieldReason")).eval(scope)
+                  ThrowException(ExceptionClassDef("NoFieldExceptionClass"), "Class doesn't have field").eval(scope)
+                  CatchException(ExceptionClassDef("NoFieldExceptionClass")).eval(scope)
               })
 
-              // Update the attrMap to hold the new values for fields as they have been initialized after calling the constructor
-              val finalMap = result.++(initializationMap)
-              attrMap.update(expr.eval(scope), objectAttr += ("field" -> finalMap))
-              attrMap.update(expr.eval(scope), objectAttr -= "constructor")
+              if(Variable("msgNoOuterObjectExceptionClass").eval(scope) == "msgNoOuterObjectExceptionClass" &&
+                Variable("msgNoObjectNeededExceptionClass").eval(scope) == "msgNoObjectNeededExceptionClass" &&
+                Variable("msgNoFieldExceptionClass").eval(scope) == "msgNoFieldExceptionClass")
+              {
+                // Update the attrMap to hold the new values for fields as they have been initialized after calling the constructor
+                val finalMap = result.++(initializationMap)
+                attrMap.update(expr.eval(scope), objectAttr += ("field" -> finalMap))
+                attrMap.update(expr.eval(scope), objectAttr -= "constructor")
+              }
+              else if(Variable("msgNoOuterObjectExceptionClass").eval(scope) != "msgNoOuterObjectExceptionClass")
+              {
+                output = Variable("msgNoOuterObjectExceptionClass").eval(scope)
+                scope.remove("msgNoOuterObjectExceptionClass")
+              }
+              else if(Variable("msgNoObjectNeededExceptionClass").eval(scope) != "msgNoObjectNeededExceptionClass")
+              {
+                output = Variable("msgNoObjectNeededExceptionClass").eval(scope)
+                scope.remove("msgNoObjectNeededExceptionClass")
+              }
+              else if(Variable("msgNoFieldExceptionClass").eval(scope) != "msgNoFieldExceptionClass")
+              {
+                output = Variable("msgNoFieldExceptionClass").eval(scope)
+                scope.remove("msgNoFieldExceptionClass")
+              }
+
+              output
             }
             else {
               // Creating the object of a class for the 1st time
@@ -748,12 +1006,18 @@ object Computation:
                   }
                   else {
                     // Throw an exception because outer class object doesn't exist
-                    throw new Error("Parent object doesn't exist")
+//                    throw new Error("Parent object doesn't exist")
+                    ExceptionClassDef("ParentExistExceptionClass", Field("ParentExistReason")).eval(scope)
+                    ThrowException(ExceptionClassDef("ParentExistExceptionClass"), "Parent object doesn't exist").eval(scope)
+                    CatchException(ExceptionClassDef("ParentExistExceptionClass")).eval(scope)
                   }
                 }
                 else {
                   // Throw an exception because the current object's class is not an inner class
-                  throw new Error(className + " is not an inner class. Parent object not needed")
+//                  throw new Error(className + " is not an inner class. Parent object not needed")
+                  ExceptionClassDef("NoClassObjectExceptionClass", Field("NoClassObjectReason")).eval(scope)
+                  ThrowException(ExceptionClassDef("NoClassObjectExceptionClass"), "Class is not an inner class. Parent object not needed").eval(scope)
+                  CatchException(ExceptionClassDef("NoClassObjectExceptionClass")).eval(scope)
                 }
               }
 
@@ -766,27 +1030,62 @@ object Computation:
 
               initializationMap.foreach(i => {
                 if(!result.contains(i._1))
-                  throw new Error("Class doesn't have field " + i._1)
+//                  throw new Error("Class doesn't have field " + i._1)
+                  ExceptionClassDef("NoFieldExceptionClass", Field("NoFieldReason")).eval(scope)
+                  ThrowException(ExceptionClassDef("NoFieldExceptionClass"), "Class doesn't have field").eval(scope)
+                  CatchException(ExceptionClassDef("NoFieldExceptionClass")).eval(scope)
               })
 
-              // Update the attrMap to hold the new values for fields as they have been initialized after calling the constructor
-              val finalMap = result.++(initializationMap)
-              attrMap.update(expr.eval(scope), objectAttr += ("field" -> finalMap))
-              attrMap.update(expr.eval(scope), objectAttr -= "constructor")
+              if(Variable("msgParentExistExceptionClass").eval(scope) == "msgParentExistExceptionClass" &&
+                Variable("msgNoClassObjectExceptionClass").eval(scope) == "msgNoClassObjectExceptionClass" &&
+                Variable("msgNoFieldExceptionClass").eval(scope) == "msgNoFieldExceptionClass")
+              {
+                // Update the attrMap to hold the new values for fields as they have been initialized after calling the constructor
+                val finalMap = result.++(initializationMap)
+                attrMap.update(expr.eval(scope), objectAttr += ("field" -> finalMap))
+                attrMap.update(expr.eval(scope), objectAttr -= "constructor")
+              }
+              else if(Variable("msgParentExistExceptionClass").eval(scope) != "msgParentExistExceptionClass")
+              {
+                output = Variable("msgParentExistExceptionClass").eval(scope)
+                scope.remove("msgParentExistExceptionClass")
+              }
+              else if(Variable("msgNoClassObjectExceptionClass").eval(scope) != "msgNoClassObjectExceptionClass")
+              {
+                output = Variable("msgNoClassObjectExceptionClass").eval(scope)
+                scope.remove("msgNoClassObjectExceptionClass")
+              }
+              else if(Variable("msgNoFieldExceptionClass").eval(scope) != "msgNoFieldExceptionClass")
+              {
+                output = Variable("msgNoFieldExceptionClass").eval(scope)
+                scope.remove("msgNoFieldExceptionClass")
+              }
+
+              output
             }
           }
 
         case InvokeObject(className, objectName, attrName, actualParams*) =>
           // Check if we have created the class for which we want to use an object
           if(!objectMap.contains(className.eval(scope)))
-            throw new Error("Class "+ className.eval(scope) + " does not have any object")
+          {
+//            throw new Error("Class "+ className.eval(scope) + " does not have any object")
+            ExceptionClassDef("NoClassObjectExceptionClass", Field("NoClassObjectReason")).eval(scope)
+            ThrowException(ExceptionClassDef("NoClassObjectExceptionClass"), "Class doesn't have this object").eval(scope)
+            CatchException(ExceptionClassDef("NoClassObjectExceptionClass")).eval(scope)
+          }
           else {
             // Get the list of objects created for the current class
             val list: ListBuffer[BasicType] = objectMap(className.eval(scope)).asInstanceOf[ListBuffer[BasicType]]
 
             // Check if we have created the object for which we want to invoke a method or get a field
             if(!list.contains(objectName.eval(scope)))
-              throw new Error("Object "+ objectName.eval(scope) + " does not exist")
+            {
+//              throw new Error("Object "+ objectName.eval(scope) + " does not exist")
+              ExceptionClassDef("NoObjectExceptionClass", Field("NoObjectReason")).eval(scope)
+              ThrowException(ExceptionClassDef("NoObjectExceptionClass"), "There is no such object").eval(scope)
+              CatchException(ExceptionClassDef("NoObjectExceptionClass")).eval(scope)
+            }
             else {
               // Get the elements that can be accessed by the object from attrMap
               val map: scala.collection.mutable.Map[BasicType, BasicType] = attrMap(objectName.eval(scope)).asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]]
@@ -896,7 +1195,7 @@ object Computation:
           val excpVar = fieldSet.asInstanceOf[scala.collection.mutable.Map[String, BasicType]].keySet.head
 
           // Get the name of the exception class
-          val myClass = scope.find(_._2.asInstanceOf[scala.collection.mutable.Map[String, BasicType]] == className.eval(scope)).map(_._1) match {
+          val myClass = scope.find(_._2 == className.eval(scope)).map(_._1) match {
             case Some(m) => m.asInstanceOf[String]
             case _ => throw new Error("Class Not found")
           }
@@ -918,71 +1217,29 @@ object Computation:
 
           // Get the field map from the exception class
           val fieldSet = className.eval(scope).asInstanceOf[scala.collection.mutable.Map[String, BasicType]].clone()("field")
+
+          val myClass = scope.find(_._2 == className.eval(scope)).map(_._1) match {
+            case Some(m) => m.asInstanceOf[String]
+            case _ => throw new Error("Class Not found")
+          }
+
           // Get the name of the field
           val key = fieldSet.asInstanceOf[scala.collection.mutable.Map[String, BasicType]].keySet.head
+
           // Get the error message associated with the field
           val msg = fieldSet.asInstanceOf[scala.collection.mutable.Map[String, BasicType]](key)
-          // Assign the message to a variable
-          Assign("msg", Value(msg)).eval(scope)
 
           // Once the exception has been caught, change the status of isExceptionThrown to false
           val f = instance.getClass.getDeclaredField("isExceptionThrown")
           f.setAccessible(true)
           f.setBoolean(instance, false)
 
+          // Assign the message to a variable
+          Assign("msg" + myClass, Value(msg)).eval(scope)
+
           // Return the value of error message
-          Variable("msg").eval(scope)
+          Variable("msg"+myClass).eval(scope)
       }
 
   @main def runArithExp: Unit =
     import SetExp.*
-
-//    Scope("scopename", CatchException("someExceptonClassName", //this parameter specifies what exceptions to catch in this block
-//      //this parameter is the try code block
-//      IF(Check("someSetName", Value(1)),
-//        Insert(Variable("var"), Value(1)),
-//        ThrowException(ClassDef("someExceptonClassName"), Assign(Field("Reason"), "Check failed"))),
-//      Insert(Variable("var"), Value(3)),
-//      //and this parameter is the catch code block
-//      //the variable "storageOfException" is bound to the exception class someExceptonClassName
-//      //and the value of its field, Reason is retrieved and stored in a set bound to the variable var.
-//      Catch(Variable("storageOfException"), Insert(Variable("var"), Field("Reason")))))
-
-
-    Assign("E", Value(Set(1,5,6))).eval()
-    If(Check(Variable("E"), Value(10)), Then(Assign("E", Value(Set(1))), Assign("E", Value(Set(10))), Assign("E", Value(Set(100)))), Else(Assign("E", Value(Set(1,5,6,10))), Assign("E", Value(Set(1,5,6,1000))))).eval()
-    println(Variable("E").eval())
-
-    println()
-    ExceptionClassDef("ExceptionClass", Field("Reason")).eval()
-    println(scopeMap("ExceptionClass"))
-
-    println()
-    println(ThrowException(ExceptionClassDef("ExceptionClass"), "Check Failed").eval())
-
-    println()
-    println(CatchException(ExceptionClassDef("ExceptionClass")).eval())
-
-    println()
-    println(Scope("myScope", Assign("E", Value(Set(1,2,3,4,5))),
-      ExceptionClassDef("ExceptionClass", Field("Reason")),
-      If(Check(Variable("E"), Value(6)), Then(Insert(Variable("E"), Value(6)), Insert(Variable("E"), Value(7))), Else(ThrowException(ExceptionClassDef("ExceptionClass"), "Check Failed"))),
-      Insert(Variable("E"), Value(8)),
-      Insert(Variable("E"), Value(9)),
-      CatchException(ExceptionClassDef("ExceptionClass"))
-    ).eval())
-
-    println()
-    println(Scope("myScope1", Assign("E", Value(Set(1,2,3,4,5))),
-      ExceptionClassDef("ExceptionClass", Field("Reason")),
-      If(Check(Variable("E"), Value(1)), Then(Insert(Variable("E"), Value(1)), Insert(Variable("E"), Value(7))), Else(ThrowException(ExceptionClassDef("ExceptionClass"), "Check Failed"))),
-      Insert(Variable("E"), Value(8)),
-      Insert(Variable("E"), Value(9)),
-      CatchException(ExceptionClassDef("ExceptionClass"))
-    ).eval())
-
-
-
-
-
-
