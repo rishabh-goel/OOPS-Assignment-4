@@ -59,5 +59,14 @@ class ComputationTest extends AnyFlatSpec with Matchers{
     assert(Interface("MyInterface",
       Public(CreateMethod("m4", Params("a", "b"), Assign("c", Cross(Variable("a"), Variable("b"))), Variable("c")))
     ).eval() === "Interface methods can't have body")
+
+    AbstractClassDef("AbstractClass1", Private(Field("f1")), Public(CreateMethod("m1", Params("a", "b"))), Public(CreateMethod("m2", Params("a", "b"), Assign("c", Union(Variable("a"), Variable("b"))), Variable("c")))).eval()
+    ClassDef("MyClass1", Private(Field("f1")), Constructor(Assign("f1", Value(5))), Public(CreateMethod("m1", Params("a", "b"), Assign("c", Cross(Variable("a"), Variable("b"))), Variable("c")))).eval()
+    Interface("MyInterface", Public(CreateMethod("m4", Params("a", "b")))).eval()
+
+    assert((ClassDef("MyClass1") Implements AbstractClassDef("AbstractClass1")) === "A class can't be implemented. It can only be extended")
+    assert((Interface("MyInterface") Implements ClassDef("MyClass1")) === "Only a class/abstract_class can implement an interface")
+    assert((ClassDef("MyClass1") Implements ClassDef("MyClass1")) === "A class can't be implemented. It can only be extended")
+
   }
 }
