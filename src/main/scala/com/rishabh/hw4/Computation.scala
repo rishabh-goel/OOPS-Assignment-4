@@ -210,7 +210,7 @@ object Computation:
         scopeMap += (childName -> map)
       }
       else {
-        // Check which exception has been caught and return the error message
+        // Check which exception has been caught and return the error message 
         // Fetching the output and removing the error message from the scope so it is not used by any other execution statement
         if(Variable("msgInterfaceInvalidTypeException").eval() != "msgInterfaceInvalidTypeException")
         {
@@ -380,7 +380,7 @@ object Computation:
             // Get updated maps for the child
             val newpublicChildMap = getNewModifiers("public", parentName, childName)
             val newprotectedChildMap = getNewModifiers("protected", parentName, childName)
-
+            
             // Update the access modifiers for child class after inheriting from the parent class
             accessMap.update("public", accessMap("public").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newpublicChildMap))
             accessMap.update("protected", accessMap("protected").asInstanceOf[scala.collection.mutable.Map[BasicType, BasicType]] += (childName -> newprotectedChildMap))
@@ -760,7 +760,7 @@ object Computation:
               scope += (key -> temp)
               temp
           }
-
+          
           // Perform operations in the current scope
           val stack = Stack[BasicType]()
           op.foreach(i => {
@@ -768,7 +768,7 @@ object Computation:
             stack.push(output)
           })
 
-          // If in a scope, there are multiple statements being executed but when an exception is thrown,
+          // If in a scope, there are multiple statements being executed but when an exception is thrown, 
           // no statement should be executed after that and only the catching of exception should be executed
           // The stack identifies the last executed statement and returns the result
           while(stack.top.getClass.toString == "class scala.runtime.BoxedUnit") {
